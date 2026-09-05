@@ -29,7 +29,7 @@
 | 后端 | Python 3.11 + FastAPI | 异步接口，编排 Dify 与业务 |
 | 数据校验 | Pydantic v2 | 请求/响应模型 |
 | ORM | SQLAlchemy 2.0 (async) + Alembic | 数据访问与迁移 |
-| 数据库 | PostgreSQL 16 | 主存储 |
+| 数据库 | MySQL 8.0 | 主存储 |
 | 缓存 / 会话 | Redis 7 | 验证码、会话、限流、热点缓存 |
 | 对象存储 | MinIO（本地）/ 阿里云 OSS（生产） | 简历文件、音视频 |
 | AI 编排 | Dify（工作流） | 面试官逻辑、简历解析、自我介绍、润色 |
@@ -40,6 +40,7 @@
 
 - **后端不直接硬编码大模型 Prompt**：所有 AI 逻辑在 Dify 工作流中维护，后端通过 Dify API 调用，仅传业务参数与上下文。
 - **语音与视频为渐进能力**：MVP 阶段文字对话优先，ASR/TTS/视频接口需抽象，便于后续接入。
+- **异步数据库驱动**：MySQL 通过 `asyncmy`（或 `aiomysql`）异步驱动访问，配合 SQLAlchemy 2.0 async；连接串与表结构迁移由 Alembic 管理。
 
 ---
 
@@ -96,7 +97,7 @@ poetry run pytest                          # 测试
 ```
 
 - 环境变量统一通过 `.env` 管理，示例见 `.env.example`，**严禁提交真实密钥**。
-- 本地依赖：PostgreSQL、Redis、MinIO、Dify 均通过 `deploy/docker-compose.yml` 一键启动。
+- 本地依赖：MySQL、Redis、MinIO、Dify 均通过 `deploy/docker-compose.yml` 一键启动。
 
 ---
 
