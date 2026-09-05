@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>offerAI 智能面试官 · UI 原型</title>
+<style>
+  :root {
+    --brand: #4F46E5;
+    --brand2: #7C3AED;
+    --success: #16A34A;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --text: #111827;
+    --text-2: #6B7280;
+    --text-3: #9CA3AF;
+    --bg: #F9FAFB;
+    --card: #FFFFFF;
+    --line: #E5E7EB;
+    --grad: linear-gradient(135deg, #4F46E5, #7C3AED);
+    --radius: 12px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #eef0f5;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 24px 80px;
+  }
+  /* ===== 看板 ===== */
+  .board-head { max-width: 1280px; margin: 0 auto 32px; }
+  .board-head h1 { font-size: 26px; font-weight: 700; }
+  .board-head h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .board-head p { color: var(--text-2); margin-top: 6px; font-size: 14px; }
+  .board {
+    max-width: 1280px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 40px 32px;
+  }
+  .frame { display: flex; flex-direction: column; align-items: center; }
+  .frame-label {
+    font-size: 13px; font-weight: 600; color: var(--text-2);
+    margin-bottom: 14px; text-align: center; line-height: 1.5;
+  }
+  .frame-label b { display: block; font-size: 15px; color: var(--text); }
+  .frame-label .tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 1px 8px; border-radius: 999px; margin-top: 4px;
+  }
+  .tag.p0 { background: #e0e7ff; color: #4338ca; }
+  .tag.p1 { background: #fef3c7; color: #b45309; }
+  /* ===== 手机外壳 ===== */
+  .phone {
+    width: 375px; height: 812px; background: var(--bg);
+    border-radius: 40px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(17,24,39,.18), 0 2px 6px rgba(17,24,39,.08);
+    border: 8px solid #111827;
+    display: flex; flex-direction: column; position: relative;
+  }
+  .statusbar {
+    height: 40px; background: var(--card);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 22px; font-size: 13px; font-weight: 600; flex-shrink: 0;
+  }
+  .statusbar .icons { display: flex; gap: 5px; align-items: center; }
+  .statusbar .icons svg { width: 16px; height: 16px; }
+  .phone-body { flex: 1; overflow-y: auto; position: relative; }
+  .phone-body::-webkit-scrollbar { display: none; }
+
+  /* ===== 通用组件 ===== */
+  .navbar {
+    height: 52px; background: var(--card); display: flex; align-items: center;
+    padding: 0 16px; gap: 8px; font-size: 17px; font-weight: 600;
+    border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative;
+  }
+  .navbar .back { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--text); }
+  .navbar .right { margin-left: auto; font-size: 14px; color: var(--brand); font-weight: 500; }
+  .tabbar {
+    height: 68px; background: var(--card); border-top: 1px solid var(--line);
+    display: flex; flex-shrink: 0;
+  }
+  .tabbar .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; font-size: 10px; color: var(--text-3);
+  }
+  .tabbar .tab.active { color: var(--brand); font-weight: 600; }
+  .tabbar .tab svg { width: 22px; height: 22px; }
+  .btn-primary {
+    display: block; width: 100%; height: 48px; border: none; cursor: pointer;
+    background: var(--grad); color: #fff; font-size: 16px; font-weight: 600;
+    border-radius: var(--radius-sm); text-align: center; line-height: 48px;
+  }
+  .btn-ghost {
+    display: block; width: 100%; height: 48px; background: var(--card); color: var(--brand);
+    border: 1px solid var(--brand); font-size: 16px; font-weight: 600;
+    border-radius: var(--radius-sm); text-align: center; line-height: 48px;
+  }
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px; }
+  .input {
+    height: 46px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 0 14px; font-size: 15px; width: 100%;
+  }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+  .field label .opt { color: var(--text-3); font-weight: 400; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px;
+    background: #eef2ff; color: var(--brand); border-radius: 999px; font-size: 12px; font-weight: 500;
+  }
+  .tag-grey { background: #f3f4f6; color: var(--text-2); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .divider { height: 1px; background: var(--line); margin: 14px 0; }
+  .muted { color: var(--text-3); font-size: 12px; }
+  .small { font-size: 12px; }
+
+  /* 聊天 */
+  .chat { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .bubble { max-width: 78%; padding: 11px 14px; font-size: 14px; line-height: 1.5; border-radius: 16px; }
+  .bubble.ai { background: #fff; align-self: flex-start; border-bottom-left-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .bubble.user { background: var(--grad); color: #fff; align-self: flex-end; border-bottom-right-radius: 6px; }
+  .bubble .who { display: block; font-size: 11px; font-weight: 600; color: var(--brand); margin-bottom: 3px; }
+  .bubble.user .who { color: #e0e7ff; }
+
+  /* 进度 */
+  .progress { height: 6px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+  .progress > i { display: block; height: 100%; background: var(--grad); border-radius: 999px; }
+
+  .score-ring { width: 96px; height: 96px; border-radius: 50%; position: relative; margin: 0 auto; }
+  .score-ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .pad { padding: 16px; }
+  .mt { margin-top: 12px; }
+  .center { text-align: center; }
+  .between { display: flex; align-items: center; justify-content: space-between; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="board-head">
+  <h1>offerAI 智能面试官 · <span>UI 原型设计稿</span></h1>
+  <p>移动端优先 · 基准 375×812 · 共 18 个页面 · 静态高保真原型（不含后端逻辑）</p>
+</div>
+
+<div class="board">
+
+<!-- 01 登录/注册 -->
+<div class="frame">
+  <div class="frame-label"><b>01 · 登录/注册页</b>登录与注册模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="phone-body pad" style="background:linear-gradient(180deg,#eef2ff,#fff)">
+      <div style="height:60px"></div>
+      <div class="center">
+        <div style="font-size:34px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">offerAI</div>
+        <div style="color:var(--text-2);margin-top:6px;font-size:15px">AI 智能面试官，助你拿 offer</div>
+      </div>
+      <div class="card mt" style="margin-top:36px;box-shadow:0 8px 24px rgba(0,0,0,.05)">
+        <div class="field">
+          <label>手机号</label>
+          <input class="input" placeholder="请输入手机号" value="138 0013 8000">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>验证码</label>
+          <div class="row">
+            <input class="input" placeholder="请输入验证码" style="flex:1">
+            <div style="width:110px;height:46px;background:var(--grad);color:#fff;border-radius:10px;text-align:center;line-height:46px;font-size:14px">获取验证码</div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-primary mt" style="margin-top:20px">登录 / 注册</div>
+      <div class="center muted mt" style="margin-top:14px">—————— 密码登录 ——————</div>
+      <div class="row" style="justify-content:center;gap:26px;margin-top:18px">
+        <div class="center"><div class="avatar" style="background:#07c160">微</div><div class="small" style="margin-top:5px">微信</div></div>
+        <div class="center"><div class="avatar" style="background:#12b7f5">Q</div><div class="small" style="margin-top:5px">QQ</div></div>
+      </div>
+      <div class="center muted small" style="margin-top:24px">登录即代表同意 <a style="color:var(--brand)">《用户协议》</a> 和 <a style="color:var(--brand)">《隐私政策》</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 新用户引导 -->
+<div class="frame">
+  <div class="frame-label"><b>02 · 新用户引导页</b>登录与注册模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="phone-body" style="display:flex;flex-direction:column">
+      <div style="padding:16px;display:flex;justify-content:flex-end"><span class="muted" style="padding:6px 12px">跳过</span></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 32px">
+        <div style="width:200px;height:200px;border-radius:24px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:80px">🎤</div>
+        <div style="font-size:22px;font-weight:700;margin-top:30px">AI 模拟面试</div>
+        <div style="color:var(--text-2);text-align:center;margin-top:12px;font-size:14px;line-height:1.6">1 对 1 或群面，AI 面试官实时提问、追问、评分，帮你练到面试不慌</div>
+        <div class="row" style="gap:8px;margin-top:30px">
+          <div class="dot" style="background:var(--brand);width:20px;border-radius:4px"></div>
+          <div class="dot" style="background:#e5e7eb"></div>
+          <div class="dot" style="background:#e5e7eb"></div>
+          <div class="dot" style="background:#e5e7eb"></div>
+        </div>
+      </div>
+      <div class="pad"><div class="btn-primary">下一步</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 03 首页 -->
+<div class="frame">
+  <div class="frame-label"><b>03 · 首页</b>首页 Tab<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="phone-body pad">
+      <div class="row" style="padding:6px 0 16px">
+        <div class="avatar">陈</div>
+        <div>
+          <div style="font-weight:700;font-size:16px">早上好，陈同学 👋</div>
+          <div class="muted">今天也要好好准备面试哦</div>
+        </div>
+      </div>
+      <div style="background:var(--grad);border-radius:16px;padding:20px;color:#fff">
+        <div style="font-size:13px;opacity:.85">模拟面试</div>
+        <div style="font-size:20px;font-weight:700;margin-top:6px">开始一场面试训练</div>
+        <div style="background:#fff;color:var(--brand);border-radius:10px;text-align:center;padding:10px 0;font-weight:600;margin-top:14px">立即开始</div>
+      </div>
+      <div class="grid2 mt">
+        <div class="card" style="text-align:center"><div style="font-size:28px">📄</div><div style="font-size:13px;font-weight:600;margin-top:6px">简历优化</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">💡</div><div style="font-size:13px;font-weight:600;margin-top:6px">就业指导</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">📚</div><div style="font-size:13px;font-weight:600;margin-top:6px">面试题库</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">🎯</div><div style="font-size:13px;font-weight:600;margin-top:6px">能力速览</div></div>
+      </div>
+      <div class="between mt" style="margin-top:18px;margin-bottom:10px">
+        <div style="font-weight:700">今日推荐训练</div>
+        <span class="muted">查看全部</span>
+      </div>
+      <div class="card row">
+        <div class="avatar" style="background:#0ea5e9">技</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">前端工程师 · 技术面</div>
+          <div class="muted">12 题 · 约 20 分钟</div>
+        </div>
+        <span class="chip">开始</span>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>首页</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 015 5c0 2.2-1.6 4-3.7 4.8A7 7 0 0119 18v2H5v-2a7 7 0 015.7-6.2A5 5 0 0112 2z"/></svg>面试</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm2 4v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>简历</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm1-5h-2v-6h2v6zm-1-8a1.2 1.2 0 110-2.4A1.2 1.2 0 0112 8z"/></svg>指导</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- 04 信息登记步骤概览 -->
+<div class="frame">
+  <div class="frame-label"><b>04 · 信息登记 · 步骤概览</b>信息登记模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>求职档案<span class="right">保存</span></div>
+    <div class="phone-body pad">
+      <div class="progress mb" style="margin-bottom:16px"><i style="width:30%"></i></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:14px">完善信息，让 AI 面试官更懂你</div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">👤</span><div style="flex:1"><div style="font-weight:600">基础个人信息</div><div class="muted">姓名、岗位、求职身份</div></div><span class="chip" style="background:#dcfce7;color:var(--success)">✓ 已完成</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">🎓</span><div style="flex:1"><div style="font-weight:600">教育经历</div><div class="muted">学历、院校、专业</div></div><span class="chip">待填写</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">💼</span><div style="flex:1"><div style="font-weight:600">实习 / 工作经历</div><div class="muted">公司、岗位、业绩</div></div><span class="chip">待填写</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">🏅</span><div style="flex:1"><div style="font-weight:600">技能与证书</div><div class="muted">专业技能、证书</div></div><span class="chip">待填写</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">🎯</span><div style="flex:1"><div style="font-weight:600">求职偏好</div><div class="muted">行业、面试轮次风格</div></div><span class="chip">待填写</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">✨</span><div style="flex:1"><div style="font-weight:600">补充信息</div><div class="muted">自我评价、职业规划</div></div><span class="chip tag-grey">选填</span></div>
+      <div class="card row" style="margin-bottom:10px"><span style="font-size:20px">🤖</span><div style="flex:1"><div style="font-weight:600">智能自我介绍</div><div class="muted">AI 一键生成</div></div><span class="chip tag-grey">AI</span></div>
+      <div class="btn-primary mt">继续填写</div>
+    </div>
+  </div>
+</div>
+
+<!-- 05 基础个人信息 -->
+<div class="frame">
+  <div class="frame-label"><b>05 · 信息登记 · 基础个人信息</b>信息登记模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>基础个人信息</div>
+    <div class="phone-body pad">
+      <div class="progress" style="margin-bottom:18px"><i style="width:30%"></i></div>
+      <div class="field"><label>姓名</label><input class="input" value="陈小明"></div>
+      <div class="field"><label>性别</label>
+        <div class="row" style="gap:10px"><span class="chip" style="background:var(--grad);color:#fff">男</span><span class="chip">女</span></div>
+      </div>
+      <div class="field"><label>求职身份</label>
+        <div class="grid2"><span class="chip">应届生</span><span class="chip" style="background:var(--grad);color:#fff">往届生</span><span class="chip">转行求职</span><span class="chip">在职跳槽</span></div>
+      </div>
+      <div class="field"><label>意向岗位</label><input class="input" value="前端开发工程师"></div>
+      <div class="field"><label>期望城市</label><input class="input" value="上海"></div>
+      <div class="field"><label>期望薪资</label><input class="input" value="15K - 20K"></div>
+      <div class="field"><label>到岗时间</label><input class="input" value="随时"></div>
+      <div class="btn-primary mt">保存并下一步</div>
+    </div>
+  </div>
+</div>
+
+<!-- 06 技能证书 -->
+<div class="frame">
+  <div class="frame-label"><b>06 · 信息登记 · 技能与证书</b>信息登记模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>技能与证书</div>
+    <div class="phone-body pad">
+      <div class="progress" style="margin-bottom:18px"><i style="width:65%"></i></div>
+      <div class="field"><label>专业技能</label>
+        <div class="card" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <span class="chip">JavaScript</span><span class="chip">Vue</span><span class="chip">React</span><span class="chip">TypeScript</span><span class="chip">Node.js</span><span class="chip" style="background:#fff;border:1px dashed var(--brand)">+ 添加</span>
+        </div>
+      </div>
+      <div class="field"><label>办公技能</label>
+        <div class="card" style="display:flex;flex-wrap:wrap;gap:8px"><span class="chip">Excel</span><span class="chip">PPT</span><span class="chip" style="background:#fff;border:1px dashed var(--brand)">+ 添加</span></div>
+      </div>
+      <div class="field"><label>语言能力</label><input class="input" value="英语 CET-6"></div>
+      <div class="field"><label>职业资格证书</label><input class="input" placeholder="如：教师资格证"></div>
+      <div class="field"><label>计算机证书</label><input class="input" placeholder="如：软考中级"></div>
+      <div class="btn-primary mt">保存并下一步</div>
+    </div>
+  </div>
+</div>
+
+<!-- 07 智能自我介绍 -->
+<div class="frame">
+  <div class="frame-label"><b>07 · 智能自我介绍</b>信息登记模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>智能自我介绍<span class="right">AI 润色</span></div>
+    <div class="phone-body pad">
+      <div class="card" style="padding:10px;display:flex;border-radius:999px">
+        <span class="chip" style="background:var(--grad);color:#fff">1 分钟版</span><span class="chip">3 分钟版</span>
+      </div>
+      <div class="row mt" style="gap:8px;flex-wrap:wrap">
+        <span class="pill">🎓 校招版</span><span class="pill" style="background:var(--grad);color:#fff">💼 社招版</span><span class="pill">🔄 转行版</span><span class="pill">🇬🇧 英文版</span>
+      </div>
+      <div class="card mt">
+        <div style="font-size:14px;line-height:1.8;color:var(--text)">
+          面试官您好，我是陈小明，毕业于 XX 大学计算机专业。我有 2 年前端开发经验，主导过 3 个中大型项目，擅长 Vue/React 技术栈……
+        </div>
+      </div>
+      <div class="muted small mt">💡 可手动编辑，点击「AI 润色」优化表达</div>
+      <div class="row mt" style="gap:10px">
+        <div class="btn-ghost" style="flex:1">重新生成</div>
+        <div class="btn-primary" style="flex:1">复制</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 08 面试配置 -->
+<div class="frame">
+  <div class="frame-label"><b>08 · 面试配置页</b>模拟面试模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>模拟面试</div>
+    <div class="phone-body pad">
+      <div class="grid2">
+        <div class="card" style="text-align:center;border:2px solid var(--brand)"><div style="font-size:30px">👤</div><div style="font-weight:600;margin-top:6px">1 对 1 面试</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:30px">👥</div><div style="font-weight:600;margin-top:6px">1 对多群面</div></div>
+      </div>
+      <div class="card mt" style="margin-top:16px">
+        <div class="field"><label>面试岗位</label><input class="input" value="前端开发工程师"></div>
+        <div class="field"><label>面试轮次</label>
+          <div class="row" style="gap:8px"><span class="chip" style="background:var(--grad);color:#fff">技术面</span><span class="chip">HR 初面</span><span class="chip">主管终面</span></div>
+        </div>
+        <div class="field" style="margin-bottom:0"><label>面试风格</label>
+          <div class="row" style="gap:8px"><span class="chip">严肃正式</span><span class="chip" style="background:var(--grad);color:#fff">轻松日常</span></div>
+        </div>
+      </div>
+      <div class="btn-primary mt" style="margin-top:20px">开始面试</div>
+    </div>
+  </div>
+</div>
+
+<!-- 09 面试进行 -->
+<div class="frame">
+  <div class="frame-label"><b>09 · 面试进行页（1 对 1）</b>模拟面试模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span><div style="text-align:center;flex:1">AI 面试官 · 技术面</div><span class="right" style="color:var(--danger)">结束</span></div>
+    <div style="padding:10px 16px;background:#fff"><div class="progress"><i style="width:40%"></i></div><div class="small muted mt" style="margin-top:4px">第 4 / 10 题</div></div>
+    <div class="phone-body">
+      <div class="chat">
+        <div class="bubble ai"><span class="who">AI 面试官</span>你好，欢迎参加本次面试。请先做一个简单的自我介绍。</div>
+        <div class="bubble user"><span class="who">我</span>面试官好，我是陈小明，有 2 年前端开发经验，擅长 Vue 和 React……</div>
+        <div class="bubble ai"><span class="who">AI 面试官</span>很好。你提到主导过 3 个中大型项目，能举一个具体的例子，说说你遇到的难点和怎么解决的吗？</div>
+        <div class="bubble user"><span class="who">我</span>好的，在 XX 项目中我们遇到首屏加载过慢……</div>
+        <div class="bubble ai"><span class="who">AI 面试官</span>这个回答有 STAR 结构，但量化结果可以再具体些。你们优化后首屏从多少降到多少？</div>
+        <div class="row" style="justify-content:center;gap:8px"><span class="pill">⏺ 语音识别中…</span></div>
+      </div>
+    </div>
+    <div style="padding:10px 12px 16px;background:#fff;border-top:1px solid var(--line)">
+      <div class="row" style="gap:8px;margin-bottom:8px">
+        <span class="pill">🎤 语音</span><span class="pill">🔄 换种说法</span><span class="pill">⏭ 跳过本题</span>
+      </div>
+      <div class="row" style="gap:8px">
+        <div class="input" style="flex:1;background:#f9fafb">输入你的回答…</div>
+        <div style="width:46px;height:46px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px">➤</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10 群面模拟 -->
+<div class="frame">
+  <div class="frame-label"><b>10 · 群面模拟页（1 对多）</b>模拟面试模块<span class="tag p1">P1</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span><div style="text-align:center;flex:1">群面 · 3 位面试官</div><span class="right" style="color:var(--danger)">结束</span></div>
+    <div style="padding:12px 16px;background:#fff;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--line)">
+      <div class="center"><div class="avatar">A</div><div class="small muted">HR</div></div>
+      <div class="center"><div class="avatar" style="background:#0ea5e9">B</div><div class="small muted">技术</div></div>
+      <div class="center"><div class="avatar" style="background:#f59e0b">C</div><div class="small muted">主管</div></div>
+      <span class="muted small" style="margin-left:auto">⏱ 抢答中</span>
+    </div>
+    <div class="phone-body">
+      <div class="chat">
+        <div class="bubble ai"><span class="who">面试官 B · 技术</span>请谈谈你最有挑战性的一个项目。</div>
+        <div class="bubble ai"><span class="who">面试官 A · HR</span>补充一下，为什么离开上一家公司？</div>
+        <div class="bubble user"><span class="who">我</span>我先回答技术问题。最有挑战的是 XX 项目……</div>
+      </div>
+    </div>
+    <div style="padding:10px 12px 16px;background:#fff;border-top:1px solid var(--line)">
+      <div class="row" style="gap:8px">
+        <div class="input" style="flex:1;background:#f9fafb">输入你的回答…</div>
+        <div style="width:46px;height:46px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff">➤</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11 面试结果 -->
+<div class="frame">
+  <div class="frame-label"><b>11 · 面试结果 / 评分页</b>模拟面试模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>面试结果</div>
+    <div class="phone-body pad">
+      <div class="card center">
+        <div style="font-size:14px;color:var(--text-2)">本次面试总分</div>
+        <div class="score-ring mt" style="background:conic-gradient(var(--brand) 0 78%,#eef2ff 78% 100%)">
+          <div style="position:absolute;inset:8px;background:#fff;border-radius:50%"></div>
+          <div class="num">78</div>
+        </div>
+        <div class="small muted">良好，继续加油！</div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:700;margin-bottom:12px">各维度评分</div>
+        <div style="margin-bottom:10px"><div class="between small"><span>内容质量</span><span>8.5</span></div><div class="progress mt" style="margin-top:6px"><i style="width:85%;background:var(--success)"></i></div></div>
+        <div style="margin-bottom:10px"><div class="between small"><span>逻辑结构</span><span>7.5</span></div><div class="progress mt" style="margin-top:6px"><i style="width:75%"></i></div></div>
+        <div style="margin-bottom:10px"><div class="between small"><span>表达沟通</span><span>8.0</span></div><div class="progress mt" style="margin-top:6px"><i style="width:80%"></i></div></div>
+        <div><div class="between small"><span>专业匹配</span><span>7.0</span></div><div class="progress mt" style="margin-top:6px"><i style="width:70%;background:var(--warning)"></i></div></div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:700;margin-bottom:10px">逐题点评</div>
+        <div style="font-size:13px;margin-bottom:10px"><b>Q1 自我介绍</b> <span class="chip" style="background:#dcfce7;color:var(--success)">8 分</span></div>
+        <div class="muted small" style="line-height:1.6">亮点：结构清晰。建议：可加入量化成果，突出与岗位的匹配点。</div>
+      </div>
+      <div class="row mt" style="gap:10px"><div class="btn-ghost" style="flex:1">再练一次</div><div class="btn-primary" style="flex:1">查看完整报告</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 12 面试报告 -->
+<div class="frame">
+  <div class="frame-label"><b>12 · 面试报告页</b>模拟面试模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>面试报告<span class="right">分享</span></div>
+    <div class="phone-body pad">
+      <div class="card center">
+        <div class="small muted">前端工程师 · 技术面 · 2026-09-05</div>
+        <div style="font-size:44px;font-weight:800;margin-top:8px"><span style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">78</span></div>
+        <div class="chip" style="background:#dcfce7;color:var(--success)">良好</div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:700;margin-bottom:10px">能力雷达</div>
+        <div style="height:120px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px">[ 雷达图占位 ]</div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:700;margin-bottom:10px">整体评价</div>
+        <div class="small" style="line-height:1.7">整体表达流畅，自我介绍有结构。但在技术深度追问和量化成果方面仍有提升空间。</div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:700;margin-bottom:10px">3 条核心改进建议</div>
+        <div class="small" style="line-height:1.9">1. 用 STAR 结构完善项目案例<br>2. 回答中补充量化数据<br>3. 加强对岗位职责的理解</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13 简历上传 -->
+<div class="frame">
+  <div class="frame-label"><b>13 · 简历上传页</b>简历优化模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>简历优化</div>
+    <div class="phone-body pad">
+      <div style="border:2px dashed var(--brand);border-radius:16px;padding:40px 20px;text-align:center;background:#eef2ff">
+        <div style="font-size:44px">📄</div>
+        <div style="font-weight:600;margin-top:10px">点击或拖拽上传简历</div>
+        <div class="muted small" style="margin-top:6px">支持 PDF / Word，最大 10MB</div>
+      </div>
+      <div class="card mt row" style="margin-top:16px">
+        <span style="font-size:22px">📄</span>
+        <div style="flex:1"><div style="font-weight:600;font-size:14px">我的简历.pdf</div><div class="muted small">1.2 MB · 已就绪</div></div>
+        <span style="color:var(--danger)">🗑</span>
+      </div>
+      <div class="btn-primary mt" style="margin-top:20px">开始分析</div>
+    </div>
+  </div>
+</div>
+
+<!-- 14 简历分析中 -->
+<div class="frame">
+  <div class="frame-label"><b>14 · 简历分析中页</b>简历优化模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="phone-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 40px">
+      <div style="width:80px;height:80px;border-radius:50%;border:6px solid #eef2ff;border-top-color:var(--brand);animation:none"></div>
+      <div style="font-size:18px;font-weight:700;margin-top:30px">AI 正在分析你的简历</div>
+      <div class="muted small" style="margin-top:8px;text-align:center">解析 → 排版 → 表达 → 亮点 → 匹配度</div>
+      <div style="width:100%;margin-top:30px">
+        <div class="row" style="margin-bottom:14px"><span class="dot" style="background:var(--success)"></span><span style="flex:1;font-size:13px">解析简历内容</span><span class="muted small">✓</span></div>
+        <div class="row" style="margin-bottom:14px"><span class="dot" style="background:var(--success)"></span><span style="flex:1;font-size:13px">分析排版与表达</span><span class="muted small">✓</span></div>
+        <div class="row" style="margin-bottom:14px"><span class="dot" style="background:var(--brand)"></span><span style="flex:1;font-size:13px;font-weight:600">提取亮点与匹配度</span><span class="muted small">分析中…</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 15 简历优化结果 -->
+<div class="frame">
+  <div class="frame-label"><b>15 · 简历优化结果页</b>简历优化模块<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>简历优化结果</div>
+    <div class="phone-body pad">
+      <div class="card center">
+        <div style="font-size:14px;color:var(--text-2)">简历综合评分</div>
+        <div style="font-size:44px;font-weight:800;margin-top:6px"><span style="background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">82</span></div>
+      </div>
+      <div class="grid2 mt">
+        <div class="card center"><div class="small muted">排版</div><div style="font-size:22px;font-weight:700;color:var(--success)">8.5</div></div>
+        <div class="card center"><div class="small muted">表达</div><div style="font-size:22px;font-weight:700">7.5</div></div>
+        <div class="card center"><div class="small muted">亮点</div><div style="font-size:22px;font-weight:700;color:var(--warning)">7.0</div></div>
+        <div class="card center"><div class="small muted">匹配度</div><div style="font-size:22px;font-weight:700">8.0</div></div>
+      </div>
+      <div class="row mt" style="gap:8px;margin-top:16px">
+        <span class="pill" style="background:var(--grad);color:#fff">全部</span><span class="pill">排版</span><span class="pill">表达</span><span class="pill">亮点</span><span class="pill">匹配度</span>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:600;font-size:14px;margin-bottom:6px">💡 亮点不够突出</div>
+        <div class="small muted" style="line-height:1.7">建议将项目成果前置，用「动词 + 量化数据」的格式描述，例如「提升页面加载速度 40%」。</div>
+      </div>
+      <div class="card mt">
+        <div style="font-weight:600;font-size:14px;margin-bottom:6px">🎯 与岗位匹配度不足</div>
+        <div class="small muted" style="line-height:1.7">岗位要求 React，简历中未突出相关经验，建议补充。</div>
+      </div>
+      <div class="btn-primary mt" style="margin-top:20px">生成优化版简历</div>
+    </div>
+  </div>
+</div>
+
+<!-- 16 优化版简历预览 -->
+<div class="frame">
+  <div class="frame-label"><b>16 · 优化版简历预览页</b>简历优化模块<span class="tag p1">P1</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>优化版简历<span class="right">下载</span></div>
+    <div class="phone-body" style="background:#e5e7eb;padding:16px">
+      <div style="background:#fff;padding:20px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);font-size:12px;line-height:1.8">
+        <div style="text-align:center"><div style="font-size:18px;font-weight:800">陈小明</div><div class="muted">前端开发工程师 · 上海 · 138****8000</div></div>
+        <div class="divider"></div>
+        <div style="font-weight:700">专业技能</div>
+        <div>JavaScript / Vue / React / TypeScript / Node.js</div>
+        <div style="font-weight:700;margin-top:8px">工作经历</div>
+        <div>XX 科技 · 前端工程师（2024-2026）</div>
+        <div>· 主导 XX 项目，首屏加载速度提升 40%</div>
+        <div style="font-weight:700;margin-top:8px">项目亮点</div>
+        <div>· 搭建组件库，复用率提升 60%</div>
+      </div>
+      <div class="row mt" style="gap:10px"><div class="btn-ghost" style="flex:1">复制文本</div><div class="btn-primary" style="flex:1">下载 PDF</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 17 就业指导首页 -->
+<div class="frame">
+  <div class="frame-label"><b>17 · 就业指导首页</b>就业指导模块<span class="tag p1">P1</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar">就业指导</div>
+    <div class="phone-body pad">
+      <div class="grid2">
+        <div class="card" style="text-align:center"><div style="font-size:28px">🧠</div><div style="font-weight:600;margin-top:6px">心理小课堂</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">💬</div><div style="font-weight:600;margin-top:6px">AI 情感陪伴</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">🎵</div><div style="font-weight:600;margin-top:6px">正能量推荐</div></div>
+        <div class="card" style="text-align:center"><div style="font-size:28px">📖</div><div style="font-weight:600;margin-top:6px">求职技巧</div></div>
+      </div>
+      <div style="font-weight:700;margin:18px 0 10px">今日正能量</div>
+      <div class="card row"><div style="font-size:30px">🌤</div><div style="flex:1;font-size:13px;line-height:1.6">「别怕，每一次面试都是一次成长的机会。」</div></div>
+      <div class="card mt row"><div style="font-size:30px">🎧</div><div style="flex:1"><div style="font-weight:600;font-size:14px">放松心情 · 轻音乐歌单</div><div class="muted small">缓解面试前焦虑</div></div></div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>首页</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 015 5c0 2.2-1.6 4-3.7 4.8A7 7 0 0119 18v2H5v-2a7 7 0 015.7-6.2A5 5 0 0112 2z"/></svg>面试</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm2 4v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>简历</div>
+      <div class="tab active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm1-5h-2v-6h2v6zm-1-8a1.2 1.2 0 110-2.4A1.2 1.2 0 0112 8z"/></svg>指导</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>我的</div>
+    </div>
+  </div>
+</div>
+
+<!-- 18 AI 情感陪伴 -->
+<div class="frame">
+  <div class="frame-label"><b>18 · AI 情感陪伴页</b>就业指导模块<span class="tag p1">P1</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="navbar"><span class="back">‹</span>AI 情感陪伴<span class="right" style="color:var(--danger)">结束</span></div>
+    <div class="phone-body">
+      <div class="chat">
+        <div class="bubble ai"><span class="who">陪伴助手</span>嗨，最近求职压力大吗？有什么想聊聊的，我都在这里听你说 💙</div>
+        <div class="bubble user"><span class="who">我</span>投了好多简历都没回应，有点焦虑。</div>
+        <div class="bubble ai"><span class="who">陪伴助手</span>能感受到你的失落。求职是个过程，不是能力的问题。你已经很努力了，给自己一点时间。要不要一起梳理一下可以调整的地方？</div>
+      </div>
+      <div style="padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="pill">😔 好焦虑</span><span class="pill">💪 需要鼓励</span><span class="pill">🎯 想要建议</span>
+      </div>
+    </div>
+    <div style="padding:10px 12px 16px;background:#fff;border-top:1px solid var(--line)">
+      <div class="row" style="gap:8px">
+        <div class="input" style="flex:1;background:#f9fafb">说点什么…</div>
+        <div style="width:46px;height:46px;background:var(--grad);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff">➤</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 19 我的 -->
+<div class="frame">
+  <div class="frame-label"><b>19 · 我的（个人中心）</b>我的 Tab<span class="tag p0">P0</span></div>
+  <div class="phone">
+    <div class="statusbar"><span>9:41</span><span class="icons">📶 🔋</span></div>
+    <div class="phone-body pad">
+      <div class="row" style="padding:8px 0 16px">
+        <div class="avatar" style="width:56px;height:56px;font-size:22px">陈</div>
+        <div style="flex:1"><div style="font-weight:700;font-size:17px">陈小明</div><div class="muted small">138****8000</div></div>
+        <span class="chip" style="background:#fef3c7;color:#b45309">👑 免费版</span>
+      </div>
+      <div class="card" style="display:flex;text-align:center">
+        <div style="flex:1"><div style="font-size:22px;font-weight:700">12</div><div class="muted small">面试次数</div></div>
+        <div style="flex:1"><div style="font-size:22px;font-weight:700">5</div><div class="muted small">简历优化</div></div>
+        <div style="flex:1"><div style="font-size:22px;font-weight:700">78</div><div class="muted small">平均分</div></div>
+      </div>
+      <div class="card mt" style="padding:8px 16px">
+        <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span>📋</span><span style="flex:1">我的报告</span><span class="muted">›</span></div>
+        <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span>👤</span><span style="flex:1">求职档案</span><span class="muted">›</span></div>
+        <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span>👑</span><span style="flex:1">会员中心</span><span class="muted">›</span></div>
+        <div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span>🔒</span><span style="flex:1">隐私与设置</span><span class="muted">›</span></div>
+        <div class="row" style="padding:12px 0"><span>🚪</span><span style="flex:1;color:var(--danger)">退出登录</span></div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>首页</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 015 5c0 2.2-1.6 4-3.7 4.8A7 7 0 0119 18v2H5v-2a7 7 0 015.7-6.2A5 5 0 0112 2z"/></svg>面试</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h12a2 2 0 012 2v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm2 4v2h8V6H8zm0 4v2h8v-2H8zm0 4v2h5v-2H8z"/></svg>简历</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21a9 9 0 100-18 9 9 0 000 18zm1-5h-2v-6h2v6zm-1-8a1.2 1.2 0 110-2.4A1.2 1.2 0 0112 8z"/></svg>指导</div>
+      <div class="tab active"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5z"/></svg>我的</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
