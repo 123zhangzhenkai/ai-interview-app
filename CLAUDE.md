@@ -32,13 +32,13 @@
 | 数据库 | MySQL 8.0 | 主存储 |
 | 缓存 / 会话 | Redis 7 | 验证码、会话、限流、热点缓存 |
 | 对象存储 | MinIO（本地）/ 阿里云 OSS（生产） | 简历文件、音视频 |
-| AI 编排 | Dify（工作流） | 面试官逻辑、简历解析、自我介绍、润色 |
+| AI 模型 | DeepSeek（直连，OpenAI 兼容） | 面试问答、简历解析、自我介绍、润色 |
 | 语音 | ASR（语音转文字）+ TTS | 对接第三方语音服务 |
 | 部署 | Docker + Docker Compose + Nginx | 容器化部署 |
 
 ### 依赖约束
 
-- **后端不直接硬编码大模型 Prompt**：所有 AI 逻辑在 Dify 工作流中维护，后端通过 Dify API 调用，仅传业务参数与上下文。
+- **后端不直接硬编码大模型 Prompt**：AI 逻辑统一封装在 `services/` 层（Prompt 集中管理、结构化输出），MVP 阶段直连 DeepSeek，后续可平滑切换 Dify 工作流编排。
 - **语音与视频为渐进能力**：MVP 阶段文字对话优先，ASR/TTS/视频接口需抽象，便于后续接入。
 - **异步数据库驱动**：MySQL 通过 `asyncmy`（或 `aiomysql`）异步驱动访问，配合 SQLAlchemy 2.0 async；连接串与表结构迁移由 Alembic 管理。
 
@@ -158,12 +158,12 @@ poetry run pytest                          # 测试
 
 ## 6. 开发要求（关键约定）
 
-### 6.1 AI / Dify 集成规范
+### 6.1 AI 集成规范（DeepSeek / Dify）
 
-- **Prompt 与工作流在 Dify 侧维护**，后端仅通过 API 传入结构化参数，不内嵌业务 Prompt。
-- 后端封装统一的 Dify 客户端（`services/dify_client.py`），统一处理：超时、重试、流式返回、错误降级。
-- AI 返回结果必须**结构化**（JSON），经 Pydantic 校验后再落库，避免把非结构化文本直接写入数据库。
-- 涉及用户隐私数据（简历、面试回答）传给 Dify 时，需脱敏处理并在日志中屏蔽明文。
+- **MVP 直连 DeepSeek**：后端通过 `services/deepseek_client.py`（OpenAI 兼容协议）调用 DeepSeek，统一处理超时、错误降级、阻塞/流式返回。
+- **Prompt 集中管理**：业务 Prompt 统一放在 `services/` 层，不散落、不硬编码在接口中；AI 返回结果需结构化（JSON），经 Pydantic 校验后再落库。
+- **Dify 为可选编排层**：`services/dify_client.py` 已预留，后续复杂工作流（多步面试官逻辑）可迁移到 Dify，接口层无需改动。
+- 涉及用户隐私数据（简历、面试回答）传给大模型时，需脱敏处理并在日志中屏蔽明文。
 
 ### 6.2 接口规范
 
@@ -207,5 +207,6 @@ poetry run pytest                          # 测试
 以下为本文档确立的默认选型，如需调整请更新本文档并同步团队：
 
 1. 前端为**响应式 H5 Web 应用**（移动端优先），暂不做原生 App / 小程序；后续如需小程序再评估跨端方案。
-2. 后端选用 **Python + FastAPI**（而非 Node），因其与 AI/Dify 生态契合、类型校验完善。
+2. 后端选用 **Python + FastAPI**（而非 Node），因其与 AI 生态契合、类型校验完善。
 3. MVP 阶段对话以**文字为主**，语音（ASR/TTS）与视频面试作为 P1 能力预留接口。
+4. AI 层 MVP 采用 **DeepSeek 直连**（OpenAI 兼容），后续按需引入 Dify 工作流编排；二者均通过 `services/` 层抽象，接口层解耦。
