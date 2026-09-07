@@ -49,6 +49,10 @@
         <span class="logo-badge small">AI</span>
         <span class="brand-name">offerAI 面试官</span>
       </div>
+      <nav class="topnav" id="topnav">
+        <button class="topnav-item active" data-view="interview" type="button">模拟面试</button>
+        <button class="topnav-item" data-view="profile" type="button">求职信息登记</button>
+      </nav>
       <div class="topbar-user">
         <span class="user-phone" id="cur-phone"></span>
         <button class="btn-ghost btn-sm" id="btn-logout" type="button">退出</button>
@@ -104,10 +108,172 @@
             <button class="btn-primary send" id="btn-send" type="button">发送</button>
           </div>
         </section>
+
+        <!-- 求职信息登记 -->
+        <section class="profile-view" id="profile-view" hidden>
+          <div class="profile-wrap">
+            <div class="profile-head">
+              <h2>求职信息登记</h2>
+              <p class="profile-sub">完善个人求职档案，便于 AI 面试官更有针对性地提问</p>
+            </div>
+
+            <!-- 1. 基础个人信息 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">1</span>基础个人信息</h3>
+              <div class="pf-grid">
+                <div class="field"><label>姓名</label><input data-f="real_name" placeholder="请输入姓名" /></div>
+                <div class="field"><label>性别</label>
+                  <select data-f="gender"><option value="">请选择</option><option value="1">男</option><option value="2">女</option></select>
+                </div>
+                <div class="field"><label>年龄</label><input data-f="age" type="number" min="14" max="80" placeholder="年龄" /></div>
+                <div class="field"><label>联系电话</label><input data-f="phone" placeholder="请输入联系电话" /></div>
+                <div class="field pf-span2"><label>常用邮箱</label><input data-f="email" type="email" placeholder="请输入邮箱" /></div>
+                <div class="field"><label>意向岗位</label><input data-f="target_position" placeholder="如：前端工程师" /></div>
+                <div class="field"><label>期望工作城市</label><input data-f="target_city" placeholder="如：上海" /></div>
+                <div class="field"><label>期望薪资下限（K）</label><input data-f="expected_salary_min" type="number" placeholder="如 15" /></div>
+                <div class="field"><label>期望薪资上限（K）</label><input data-f="expected_salary_max" type="number" placeholder="如 20" /></div>
+                <div class="field"><label>可到岗时间</label><input data-f="available_date" placeholder="如：随时 / 2026-10-01" /></div>
+                <div class="field"><label>求职身份</label>
+                  <select data-f="job_seeker_type">
+                    <option value="">请选择</option>
+                    <option value="fresh">应届生</option>
+                    <option value="graduate">往届生</option>
+                    <option value="career_change">转行求职</option>
+                    <option value="employed">在职跳槽</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 教育经历 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">2</span>教育经历</h3>
+              <div class="pf-sub-tip">可添加多条，按顺序排列</div>
+              <div id="edu-list"></div>
+              <button class="btn-ghost pf-add" id="btn-add-edu" type="button">＋ 添加教育经历</button>
+            </div>
+
+            <!-- 3. 实习 / 工作经历 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">3</span>实习 / 工作经历</h3>
+              <div class="pf-sub-tip">可添加多条，按顺序排列</div>
+              <div id="work-list"></div>
+              <button class="btn-ghost pf-add" id="btn-add-work" type="button">＋ 添加工作经历</button>
+            </div>
+
+            <!-- 4. 技能与证书 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">4</span>技能与证书</h3>
+              <div class="pf-grid">
+                <div class="field"><label>专业技能（逗号分隔）</label><input data-sk="professional" placeholder="如：JavaScript, Vue, SQL" /></div>
+                <div class="field"><label>办公技能（逗号分隔）</label><input data-sk="office" placeholder="如：Excel, PPT" /></div>
+                <div class="field pf-span2"><label>语言能力（逗号分隔）</label><input data-sk="language" placeholder="如：英语 CET-6, 日语 N2" /></div>
+              </div>
+              <h4 class="pf-h4">证书列表</h4>
+              <div class="pf-sub-tip">可添加多条（英语 / 计算机 / 职业证书）</div>
+              <div id="cert-list"></div>
+              <button class="btn-ghost pf-add" id="btn-add-cert" type="button">＋ 添加证书</button>
+            </div>
+
+            <!-- 5. 求职偏好 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">5</span>求职偏好设置</h3>
+              <div class="pf-grid">
+                <div class="field"><label>意向行业</label><input data-p="target_industry" placeholder="如：互联网 / 金融" /></div>
+                <div class="field"><label>企业类型</label><input data-p="company_type" placeholder="如：大厂 / 创业公司" /></div>
+                <div class="field pf-boolean"><label>是否接受加班</label>
+                  <select data-p="accept_overtime"><option value="">请选择</option><option value="true">接受</option><option value="false">不接受</option></select>
+                </div>
+                <div class="field pf-boolean"><label>是否接受出差</label>
+                  <select data-p="accept_business_trip"><option value="">请选择</option><option value="true">接受</option><option value="false">不接受</option></select>
+                </div>
+                <div class="field pf-boolean"><label>是否接受异地工作</label>
+                  <select data-p="accept_relocation"><option value="">请选择</option><option value="true">接受</option><option value="false">不接受</option></select>
+                </div>
+                <div class="field"><label>面试轮次偏好</label>
+                  <select data-p="interview_round_pref"><option value="">请选择</option><option value="hr">HR 初面</option><option value="tech">技术面</option><option value="final">主管终面</option></select>
+                </div>
+                <div class="field"><label>面试风格</label>
+                  <select data-p="interview_style"><option value="">请选择</option><option value="formal">严肃正式</option><option value="casual">轻松日常</option></select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. 求职补充信息 -->
+            <div class="pf-card">
+              <h3 class="pf-title"><span class="pf-no">6</span>求职补充信息</h3>
+              <div class="pf-grid">
+                <div class="field pf-span2"><label>个人优缺点自评</label><textarea data-e="self_assessment" rows="3" placeholder="可在此描述自己的优势与待改进之处"></textarea></div>
+                <div class="field pf-span2"><label>职业规划</label><textarea data-e="career_plan" rows="3" placeholder="未来 3-5 年的职业方向与规划"></textarea></div>
+                <div class="field pf-span2"><label>兴趣特长</label><textarea data-e="hobbies" rows="2" placeholder="兴趣爱好、个人特长"></textarea></div>
+              </div>
+            </div>
+
+            <div class="pf-actions">
+              <button class="btn-ghost" id="btn-draft" type="button">保存草稿</button>
+              <button class="btn-primary" id="btn-save-profile" type="button">提交保存</button>
+            </div>
+            <p class="pf-tip-msg" id="profile-msg"></p>
+          </div>
+        </section>
       </main>
     </div>
   </div>
 
   <script src="app.js"></script>
+
+  <!-- ========== 动态子表行模板 ========== -->
+  <template id="tpl-edu">
+    <div class="pf-row">
+      <div class="pf-row-head">
+        <span class="pf-row-title">教育经历</span>
+        <button type="button" class="btn-danger btn-xs pf-del">删除</button>
+      </div>
+      <div class="pf-grid">
+        <div class="field"><label>最高学历</label><input data-d="degree" placeholder="如：本科" /></div>
+        <div class="field"><label>毕业院校</label><input data-d="school" placeholder="毕业院校" /></div>
+        <div class="field"><label>专业</label><input data-d="major" placeholder="专业" /></div>
+        <div class="field"><label>入学时间</label><input data-d="start_date" type="date" /></div>
+        <div class="field"><label>毕业时间</label><input data-d="end_date" type="date" /></div>
+        <div class="field pf-span2"><label>核心课程</label><input data-d="main_courses" placeholder="主修核心课程" /></div>
+        <div class="field pf-span2"><label>在校荣誉 / 奖学金</label><input data-d="honors" placeholder="选填" /></div>
+        <div class="field"><label>成绩</label><input data-d="gpa" placeholder="选填，如 3.6/4.0" /></div>
+        <div class="field pf-span2"><label>校园项目 / 竞赛 / 社团任职</label><input data-d="campus_projects" placeholder="选填" /></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-work">
+    <div class="pf-row">
+      <div class="pf-row-head">
+        <span class="pf-row-title">工作经历</span>
+        <button type="button" class="btn-danger btn-xs pf-del">删除</button>
+      </div>
+      <div class="pf-grid">
+        <div class="field"><label>公司名称</label><input data-d="company_name" placeholder="公司名称" /></div>
+        <div class="field"><label>岗位</label><input data-d="position" placeholder="岗位名称" /></div>
+        <div class="field"><label>开始时间</label><input data-d="start_date" type="date" /></div>
+        <div class="field"><label>结束时间</label><input data-d="end_date" type="date" /></div>
+        <div class="field pf-span2"><label>工作内容</label><textarea data-d="job_content" rows="2" placeholder="工作内容描述"></textarea></div>
+        <div class="field pf-span2"><label>负责板块</label><input data-d="responsible_area" placeholder="负责板块" /></div>
+        <div class="field pf-span2"><label>实操技能 / 工具</label><input data-d="skills" placeholder="如：Python, 数据分析" /></div>
+        <div class="field pf-span2"><label>工作成果 / 业绩案例</label><textarea data-d="achievements" rows="2" placeholder="量化成果、项目案例等"></textarea></div>
+        <div class="field pf-span2"><label>离职原因（选填）</label><input data-d="leave_reason" placeholder="选填，供 AI 追问参考" /></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-cert">
+    <div class="pf-row pf-row-sm">
+      <div class="pf-grid">
+        <div class="field"><label>证书类型</label>
+          <select data-d="cert_type"><option value="">请选择</option><option value="english">英语</option><option value="computer">计算机</option><option value="vocational">职业证书</option></select>
+        </div>
+        <div class="field"><label>证书名称</label><input data-d="cert_name" placeholder="如：CET-6" /></div>
+        <div class="field"><label>获取时间</label><input data-d="issue_date" type="date" /></div>
+        <div class="field pf-del-cell"><button type="button" class="btn-danger btn-xs pf-del">删除</button></div>
+      </div>
+    </div>
+  </template>
 </body>
 </html>

@@ -98,6 +98,11 @@ function showApp() {
   normalizeSession();
   renderHistory();
   showStartView();
+  // 复位到「模拟面试」视图
+  if (typeof profileView !== 'undefined') {
+    profileView.hidden = true;
+    navBtns.forEach((b) => b.classList.toggle('active', b.dataset.view === 'interview'));
+  }
 }
 
 /* ---------- 登录 / 注册 ---------- */
@@ -362,11 +367,282 @@ function renderHistory() {
 }
 
 /* =====================================================
-   事件绑定
+   求职信息登记模块
    ===================================================== */
+const DRAFT_KEY = 'offerai_resume_draft';
+const profileView = $('#profile-view');
+const profileMsg = $('#profile-msg');
+let profileLoaded = false; // 是否已从后端拉取过当前档案
+
+function showProfileMsg(text, type) {
+  profileMsg.textContent = text || '';
+  profileMsg.className = 'pf-tip-msg' + (type === 'ok' ? ' ok' : (type === 'err' ? ' err' : ''));
+}
+
+/* ---------- 顶部导航：面试 / 求职信息登记 ---------- */
+const navBtns = $$('#topnav .topnav-item');
+function switchView(view) {
+  navBtns.forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+  if (view === 'profile') {
+    startView.hidden = true;
+    chatView.hidden = true;
+    profileView.hidden = false;
+    if (!profileLoaded) loadProfileFromServer();
+    else renderFromDraftOrMemory();
+  } else {
+    profileView.hidden = true;
+    const hasOpen = !!currentSession();
+    startView.hidden = hasOpen;
+    chatView.hidden = !hasOpen;
+  }
+}
+navBtns.forEach((b) => b.addEventListener('click', () => switchView(b.dataset.view)));
+
+/* ---------- 动态子表：增删 ---------- */
+function cloneTemplate(id) {
+  const tpl = document.getElementById(id);
+  return tpl.content.firstElementChild.cloneNode(true);
+}
+
+function appendDynamicRow(listId, tplId) {
+  const list = document.getElementById(listId);
+  list.appendChild(cloneTemplate(tplId));
+}
+function bindDynamicRowActions() {
+  document.querySelectorAll('#edu-list, #work-list, #cert-list').forEach((list) => {
+    list.addEventListener('click', (e) => {
+      if (e.target.classList.contains('pf-del')) {
+        const row = e.target.closest('.pf-row');
+        if (row) row.remove();
+      }
+    });
+  });
+}
+$('#btn-add-edu').addEventListener('click', () => appendDynamicRow('edu-list', 'tpl-edu'));
+$('#btn-add-work').addEventListener('click', () => appendDynamicRow('work-list', 'tpl-work'));
+$('#btn-add-cert').addEventListener('click', () => appendDynamicRow('cert-list', 'tpl-cert'));
+
+/* ---------- 读取 / 回填表单 ---------- */
+function valOrNull(v) { return (v === undefined || v === null || String(v).trim() === '') ? null : String(v).trim(); }
+function numOrNull(v) { const n = parseFloat(v); return Number.isFinite(n) ? n : null; }
+
+/* 主档 + 偏好 + 补充 的常规字段收集（data-f / data-p / data-e） */
+function readScalar(scope, attrPrefix) {
+  const out = {};
+  scope.querySelectorAll('[' + attrPrefix + ']').forEach((el) => {
+    const key = attrPrefix.replace('data-', ''); // data-f -> f
+    out[el.dataset[key]] = valOrNull(el.value);
+  });
+  return out;
+}
+
+function collectJobProfile() {
+  const wrap = $('#profile-view .profile-wrap');
+
+  const rawProfile = readScalar(wrap, 'data-f');
+  // 薪资：页面填 K，落库存元（×1000）
+  const p = {
+    real_name: rawProfile.real_name,
+    gender: rawProfile.gender ? Number(rawProfile.gender) : null,
+    age: rawProfile.age ? Number(rawProfile.age) : null,
+    phone: rawProfile.phone,
+    email: rawProfile.email,
+    target_position: rawProfile.target_position,
+    target_city: rawProfile.target_city,
+    expected_salary_min: numOrNull(rawProfile.expected_salary_min) != null ? numOrNull(rawProfile.expected_salary_min) * 1000 : null,
+    expected_salary_max: numOrNull(rawProfile.expected_salary_max) != null ? numOrNull(rawProfile.expected_salary_max) * 1000 : null,
+    available_date: rawProfile.available_date,
+    job_seeker_type: rawProfile.job_seeker_type,
+  };
+
+  const rawPref = readScalar(wrap, 'data-p');
+  const prefs = {};
+  ['target_industry', 'company_type', 'interview_round_pref', 'interview_style'].forEach((k) => { prefs[k] = rawPref[k]; });
+  ['accept_overtime', 'accept_business_trip', 'accept_relocation'].forEach((k) => {
+    prefs[k] = rawPref[k] === 'true' ? true : (rawPref[k] === 'false' ? false : null);
+  });
+
+  const rawExtra = readScalar(wrap, 'data-e');
+  const extras = { self_assessment: rawExtra.self_assessment, career_plan: rawExtra.career_plan, hobbies: rawExtra.hobbies };
+
+  // 技能：逗号分隔 → user_skills 多条
+  const skills = [];
+  wrap.querySelectorAll('[data-sk]').forEach((el) => {
+    (el.value || '').split(/[,，]/).map((s) => s.trim()).filter(Boolean).forEach((name) => {
+      skills.push({ skill_type: el.dataset.sk, skill_name: name });
+    });
+  });
+
+  const educations = [];
+  document.querySelectorAll('#edu-list .pf-row').forEach((row) => {
+    const r = {};
+    row.querySelectorAll('[data-d]').forEach((el) => { r[el.dataset.d] = valOrNull(el.value); });
+    educations.push(r);
+  });
+
+  const work_experiences = [];
+  document.querySelectorAll('#work-list .pf-row').forEach((row) => {
+    const r = {};
+    row.querySelectorAll('[data-d]').forEach((el) => { r[el.dataset.d] = valOrNull(el.value); });
+    work_experiences.push(r);
+  });
+
+  const certificates = [];
+  document.querySelectorAll('#cert-list .pf-row').forEach((row) => {
+    const r = {};
+    row.querySelectorAll('[data-d]').forEach((el) => { r[el.dataset.d] = valOrNull(el.value); });
+    if (r.cert_name && r.cert_type) certificates.push(r); // 名称与类型都填才算一条
+  });
+
+  return {
+    profile: p,
+    educations: educations.filter((e) => e.school || e.major || e.degree),
+    work_experiences: work_experiences.filter((w) => w.company_name || w.position),
+    skills,
+    certificates,
+    preferences: prefs,
+    extras,
+  };
+}
+
+/* 子表行数据回填 */
+function fillRows(listId, tplId, rows, keyLabels) {
+  const list = document.getElementById(listId);
+  list.innerHTML = '';
+  rows.forEach((row) => {
+    const node = cloneTemplate(tplId);
+    node.querySelectorAll('[data-d]').forEach((el) => {
+      const key = el.dataset.d;
+      let val = row[key];
+      if (val !== undefined && val !== null) {
+        if (el.type === 'date') val = String(val).slice(0, 10);
+        el.value = val;
+      }
+    });
+    list.appendChild(node);
+  });
+}
+
+function fillJobProfile(data) {
+  const wrap = $('#profile-view .profile-wrap');
+  if (data.profile) {
+    const pf = data.profile;
+    wrap.querySelectorAll('[data-f]').forEach((el) => {
+      const key = el.dataset.f;
+      let v = pf[key];
+      if (v === undefined || v === null) return;
+      if (key === 'expected_salary_min' || key === 'expected_salary_max') {
+        const n = Number(v) / 1000;
+        el.value = Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+        return;
+      }
+      if (key === 'age' || key === 'gender') { el.value = String(v); return; }
+      el.value = v;
+    });
+  }
+  if (data.preferences) {
+    wrap.querySelectorAll('[data-p]').forEach((el) => {
+      const v = data.preferences[el.dataset.p];
+      if (v === undefined || v === null) return;
+      el.value = typeof v === 'boolean' ? String(v) : String(v);
+    });
+  }
+  if (data.extras) {
+    wrap.querySelectorAll('[data-e]').forEach((el) => {
+      const v = data.extras[el.dataset.e];
+      if (v !== undefined && v !== null) el.value = v;
+    });
+  }
+  // 技能回填：按类型分组为逗号串
+  if (data.skills) {
+    const byType = {};
+    data.skills.forEach((s) => { (byType[s.skill_type] = byType[s.skill_type] || []).push(s.skill_name); });
+    wrap.querySelectorAll('[data-sk]').forEach((el) => {
+      const arr = byType[el.dataset.sk] || [];
+      el.value = arr.join(', ');
+    });
+  }
+  fillRows('edu-list', 'tpl-edu', data.educations || []);
+  fillRows('work-list', 'tpl-work', data.work_experiences || []);
+  fillRows('cert-list', 'tpl-cert', data.certificates || []);
+}
+
+/* ---------- 数据来源策略：远程档案 / 本地草稿 / 空 ---------- */
+function renderFromDraftOrMemory() {
+  const draft = localStorage.getItem(DRAFT_KEY);
+  if (draft) {
+    try { fillJobProfile(JSON.parse(draft)); showProfileMsg('已载入本地草稿，可继续编辑后提交', ''); return; }
+    catch (e) { localStorage.removeItem(DRAFT_KEY); }
+  }
+}
+async function loadProfileFromServer() {
+  try {
+    const data = await request('/job-profile', { method: 'GET' });
+    profileLoaded = true;
+    if (data && (data.profile || (data.educations && data.educations.length) || (data.work_experiences && data.work_experiences.length) || data.preferences || data.extras)) {
+      fillJobProfile(data);
+      showProfileMsg('已载入现有档案，可直接编辑修改', '');
+    } else {
+      renderFromDraftOrMemory();
+    }
+  } catch (err) {
+    profileLoaded = true;
+    showProfileMsg(err.message, 'err');
+  }
+}
+
+/* ---------- 校验必填 ---------- */
+function validateProfile() {
+  const wrap = $('#profile-view .profile-wrap');
+  let firstBad = null;
+  const required = [
+    ['real_name', '请填写姓名'],
+    ['phone', '请填写联系电话']
+  ];
+  wrap.querySelectorAll('[data-f]').forEach((el) => { el.classList.remove('invalid'); });
+  required.forEach(([key, msg]) => {
+    const el = wrap.querySelector('[data-f="' + key + '"]');
+    if (!el || !String(el.value).trim()) {
+      if (el) el.classList.add('invalid');
+      if (!firstBad) firstBad = msg;
+    }
+  });
+  if (firstBad) showProfileMsg(firstBad, 'err');
+  return !firstBad;
+}
+
+/* ---------- 保存草稿 ---------- */
+$('#btn-draft').addEventListener('click', () => {
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(collectJobProfile()));
+  showProfileMsg('草稿已保存到本地', 'ok');
+});
+
+/* ---------- 提交保存 ---------- */
+$('#btn-save-profile').addEventListener('click', async () => {
+  if (!validateProfile()) return;
+  const btn = $('#btn-save-profile');
+  btn.disabled = true;
+  try {
+    const payload = collectJobProfile();
+    await request('/job-profile', { method: 'PUT', body: payload });
+    profileLoaded = true;
+    localStorage.removeItem(DRAFT_KEY);
+    showProfileMsg('保存成功', 'ok');
+  } catch (err) {
+    showProfileMsg(err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+bindDynamicRowActions();
+
+/* ---------- 事件绑定（面试） ---------- */
 answerInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendAnswer(); } });
 $('#btn-send').addEventListener('click', sendAnswer);
 $('#btn-end').addEventListener('click', endInterview);
+
+
 
 /* ---------- 启动 ---------- */
 (function init() {
